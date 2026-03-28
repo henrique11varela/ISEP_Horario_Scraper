@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Links</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <p class="label">Horários ISEP</p>
+            <a href="/">
+                <h1>← {{ turma }} - Dias</h1>
+            </a>
+            <div class="divider"></div>
+        </header>
+
+        <ul>
+            {% for day in days %}
+            <li>
+                <a href="/{{ turma }}/{{ day['day'] }}">
+                    <span class="link-title">{{ day["week"] }}</span>
+                    <span class="link-meta"></span>
+                    <span class="arrow">→</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <footer>Made by <a href="https://www.linkedin.com/in/henrique-varela">Henrique Varela</a>.</footer>
+    </div>
+</body>
+
+</html>

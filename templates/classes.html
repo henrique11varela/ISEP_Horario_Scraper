@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Links</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <p class="label">Horários ISEP</p>
+            <a href="/{{ turma }}">
+                <h1>← {{ turma }} - Aulas</h1>
+            </a>
+            <div class="divider"></div>
+        </header>
+        <div style="margin-bottom: 10px;">
+            <h2>{{ classes['weekday'] }}</h2>
+            <h2>{{ classes['date'] }}</h2>
+        </div>
+
+        <ul>
+            {% for class_item in classes['classes'] %}
+            <li>
+                <div class="pseudo-a">
+                    <span class="link-title">{{ class_item["hours_start"] }}-{{ class_item["hours_end"] }} {{
+                        class_item["class_name"] }} </span>
+                    <span class="link-meta">@ {{ class_item["classroom"] }} - {{ class_item["prof_name"] }}</span>
+                    <span class="arrow"></span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <footer>Made by <a href="https://www.linkedin.com/in/henrique-varela">Henrique Varela</a>.</footer>
+    </div>
+</body>
+
+</html>

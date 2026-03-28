@@ -1,0 +1,17 @@
+{
+    "sources": [
+        {
+            "turma": "1NA",
+            "link": "https://portal.isep.ipp.pt/intranet/ver_horario/ver_horario.aspx?class=51662"
+        },
+        {
+            "turma": "1NB",
+            "link": "https://portal.isep.ipp.pt/intranet/ver_horario/ver_horario.aspx?class=51663"
+        }
+    ],
+    "creds": {
+        "user": "12#####",
+        "pass": "********"
+    },
+    "production": true
+}
