@@ -8,4 +8,6 @@ chromium --version
 chromedriver --version
 which chromium
 which chromedriver
+sudo timedatectl set-ntp on
+sudo timedatectl set-timezone Europe/Lisbon
 ```
