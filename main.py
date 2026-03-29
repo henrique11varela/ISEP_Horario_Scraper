@@ -34,6 +34,8 @@ def login(driver: Chrome):
 
 def scrape_url(driver: Chrome, url: str):
     driver.get(url)
+    time.sleep(1)
+    driver.save_screenshot(f'{url.split("=")[-1]}.png')
     week_days = [el.text.split("\n") for el in driver.find_elements(By.CSS_SELECTOR, ".wc-day-column-header")]
     output = []
     
@@ -68,6 +70,7 @@ def get_everything(sources):
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")   # required for servers
         options.add_argument("--window-size=1920,2160")
+        options.add_argument("--no-sandbox")
         service = ChromeService("/usr/bin/chromedriver")
         driver = Chrome(service=service, options=options)
         login(driver)
