@@ -22,6 +22,7 @@ with open('./config.json') as config_file:
     production = config["production"]
 
 def login(driver: Chrome):
+    print('logging in', flush=True)
     try:
         driver.get("https://portal.isep.ipp.pt/")
         driver.implicitly_wait(2)
@@ -33,6 +34,7 @@ def login(driver: Chrome):
         print(e, flush=True)
 
 def scrape_url(driver: Chrome, url: str):
+    print(f'going for: {url}', flush=True)
     driver.get(url)
     time.sleep(1)
     driver.save_screenshot(f'{url.split("=")[-1]}.png')

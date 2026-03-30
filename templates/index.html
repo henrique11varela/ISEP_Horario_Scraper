@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Links</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#333333">
+    <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/service-worker.js" defer></script>
+    <script src="/static/main.js" defer></script>
 </head>
 
 <body>
@@ -31,8 +36,15 @@
                 </a>
             </li>
             {% endfor %}
+            <li id="installBtn" class="pseudo-a hover" style="display: none;">
+                <div>
+                    <span class="link-title">Install</span>
+                    <span class="link-meta">PWA App</span>
+                    <span class="arrow">→</span>
+                </div>
+            </li>
         </ul>
-
+        
         <footer>Made by <a href="https://www.linkedin.com/in/henrique-varela">Henrique Varela</a>.</footer>
     </div>
 </body>

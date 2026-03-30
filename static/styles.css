@@ -71,12 +71,12 @@
     }
     
     li {
-        border-top: 1px solid var(--rule);
         animation: slide-in 0.5s ease both;
+        border-bottom: 1px solid var(--rule);
     }
     
-    li:last-child {
-        border-bottom: 1px solid var(--rule);
+    li:first-child {
+        border-top: 1px solid var(--rule);
     }
     
     li:nth-child(1) { animation-delay: 0.05s; }
@@ -103,7 +103,8 @@
         gap: 1rem;
     }
     
-    a:hover {
+    a:hover,
+    .pseudo-a.hover:hover {
         color: var(--accent);
         padding-left: 0.5rem;
     }

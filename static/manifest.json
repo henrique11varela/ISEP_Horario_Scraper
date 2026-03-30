@@ -1,0 +1,15 @@
+{
+  "name": "ISEP Horários",
+  "short_name": "Horários",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#333333",
+  "icons": [
+    {
+      "src": "/static/pwa-icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}
