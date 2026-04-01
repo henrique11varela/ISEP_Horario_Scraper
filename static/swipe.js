@@ -2,7 +2,6 @@ const bod = document.querySelector("body")
 bod.addEventListener("touchstart", (event) => {
     const start = event.changedTouches[0].clientX
     function endFunc(event2) {
-        event2.preventDefault()
         let pathArray = window.location.pathname.split('/')
         const end = event2.changedTouches[0].clientX
         if (end - start < -100) {
