@@ -75,6 +75,10 @@
         border-bottom: 1px solid var(--rule);
     }
     
+    li.now {
+        filter: saturate(50);
+    }
+    
     li:first-child {
         border-top: 1px solid var(--rule);
     }
@@ -120,7 +124,7 @@
         font-weight: 300;
         letter-spacing: 0.15em;
         text-transform: uppercase;
-        opacity: 0.45;
+        opacity: 1;
         white-space: nowrap;
         transition: opacity 0.2s;
     }

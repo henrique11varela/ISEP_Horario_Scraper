@@ -10,6 +10,7 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/swipe.js" defer></script>
 </head>
 
 <body>
@@ -28,7 +29,7 @@
 
         <ul>
             {% for class_item in classes['classes'] %}
-            <li>
+            <li class="{{ 'now' if class_item['now'] else '' }}">
                 <div class="pseudo-a">
                     <span class="link-title">{{ class_item["hours_start"] }}-{{ class_item["hours_end"] }} {{
                         class_item["class_name"] }} </span>

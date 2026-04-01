@@ -24,7 +24,7 @@
 
         <ul>
             {% for day in days %}
-            <li>
+            <li class="{{ 'now' if day["now"] else '' }}">
                 <a href="/{{ turma }}/{{ day['day'] }}">
                     <span class="link-title">{{ day["week"] }}</span>
                     <span class="link-meta"></span>

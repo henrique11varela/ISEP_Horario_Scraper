@@ -1,4 +1,4 @@
-import time, json
+import time, json, datetime
 from flask import Flask, render_template, redirect
 from selenium import webdriver
 from selenium.webdriver import Chrome, ChromeService
@@ -115,10 +115,13 @@ def horarios_templates(turma=None):
     if turma not in list(output):
         return redirect("/")
     days = []
+    now = datetime.datetime.now()
+    weekday = now.weekday()
     for day in list(order_day):
         days.append({
             "week": day,
-            "day": order_day[day]
+            "day": order_day[day],
+            "now": weekday == order_day[day]
         })
     return render_template("days.html", output=output, days=days, turma=turma)
 
@@ -135,6 +138,17 @@ def horarios_dias_templates(turma=None, dia=None):
             day['classes'].sort(key=lambda x: int(x['hours_start'].replace(':', '')))
             classes = day
             break
+    now = datetime.datetime.now()
+    hour = now.hour
+    minute = now.minute
+    if minute < 10:
+        minute = f'0{minute}'
+    int_now = int(f"{hour}{minute}")
+    for class_instance in classes['classes']:
+        if int(class_instance['hours_start'].replace(':', '')) - 10 <= int_now and int(class_instance['hours_end'].replace(':', '')) >= int_now:
+            class_instance['now'] = True
+        else:
+            class_instance['now'] = False
     return render_template("classes.html", output=output, classes=classes, turma=turma)
 
 
