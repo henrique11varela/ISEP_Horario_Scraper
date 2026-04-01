@@ -1,6 +1,5 @@
 const bod = document.querySelector("body")
 bod.addEventListener("touchstart", (event) => {
-    event.preventDefault()
     const start = event.changedTouches[0].clientX
     function endFunc(event2) {
         event2.preventDefault()
