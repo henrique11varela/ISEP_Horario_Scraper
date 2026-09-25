@@ -1,4 +1,0 @@
-flask
-selenium
-apscheduler
-flask-cors

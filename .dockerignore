@@ -1,4 +1,6 @@
+.git
 .venv
 config.json
 *.db
+*.png
 .env

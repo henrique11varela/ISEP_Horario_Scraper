@@ -1,8 +1,11 @@
-import time, json, datetime
+import os, time, datetime, sqlite3
+from dotenv import load_dotenv
 from flask import Flask, render_template, redirect
 from selenium import webdriver
 from selenium.webdriver import Chrome, ChromeService
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from apscheduler.schedulers.background import BackgroundScheduler
 
 order_day = {
@@ -15,11 +18,86 @@ order_day = {
     "DOMINGO": 6
 }
 
-with open('./config.json') as config_file:
-    config = json.load(config_file)
-    sources = config["sources"]
-    creds = config["creds"]
-    production = config["production"]
+load_dotenv()
+
+HORARIO_URL = "https://portal.isep.ipp.pt/intranet/ver_horario/ver_horario.aspx?class="
+
+# SOURCES is a comma-separated list of turma:class_id pairs, e.g. "1NA:53466,1NB:53467"
+sources = []
+for pair in os.environ["SOURCES"].split(","):
+    turma, class_id = pair.strip().split(":")
+    sources.append({"turma": turma.strip(), "link": HORARIO_URL + class_id.strip()})
+creds = {"user": os.environ["ISEP_USER"], "pass": os.environ["ISEP_PASS"]}
+production = os.environ.get("PRODUCTION", "true").lower() in ("1", "true", "yes")
+db_path = os.environ.get("DB_PATH", "./horario.db")
+port = int(os.environ.get("PORT", "5000"))
+
+def get_db():
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    with get_db() as conn:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS days (
+                turma TEXT NOT NULL,
+                weekday TEXT NOT NULL,
+                date TEXT NOT NULL,
+                PRIMARY KEY (turma, weekday)
+            );
+            CREATE TABLE IF NOT EXISTS classes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                turma TEXT NOT NULL,
+                weekday TEXT NOT NULL,
+                hours_start TEXT NOT NULL,
+                hours_end TEXT NOT NULL,
+                class_name TEXT NOT NULL,
+                prof_name TEXT NOT NULL,
+                classroom TEXT NOT NULL,
+                FOREIGN KEY (turma, weekday) REFERENCES days (turma, weekday)
+            );
+        """)
+    conn.close()
+
+def save_output(output):
+    # Replace each scraped turma's schedule in a single transaction
+    conn = get_db()
+    with conn:
+        for turma, days in output.items():
+            conn.execute("DELETE FROM classes WHERE turma = ?", (turma,))
+            conn.execute("DELETE FROM days WHERE turma = ?", (turma,))
+            for day in days:
+                conn.execute(
+                    "INSERT INTO days (turma, weekday, date) VALUES (?, ?, ?)",
+                    (turma, day["weekday"], day["date"])
+                )
+                conn.executemany(
+                    "INSERT INTO classes (turma, weekday, hours_start, hours_end, class_name, prof_name, classroom) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [(turma, day["weekday"], c["hours_start"], c["hours_end"], c["class_name"], c["prof_name"], c["classroom"]) for c in day["classes"]]
+                )
+    conn.close()
+
+def get_turmas():
+    conn = get_db()
+    turmas = [row["turma"] for row in conn.execute("SELECT DISTINCT turma FROM days ORDER BY turma")]
+    conn.close()
+    return turmas
+
+def get_day(turma, weekday):
+    conn = get_db()
+    day = conn.execute("SELECT weekday, date FROM days WHERE turma = ? AND weekday = ?", (turma, weekday)).fetchone()
+    if day is None:
+        conn.close()
+        return {"weekday": weekday, "date": "", "classes": []}
+    rows = conn.execute(
+        """SELECT hours_start, hours_end, class_name, prof_name, classroom FROM classes
+           WHERE turma = ? AND weekday = ?
+           ORDER BY CAST(REPLACE(hours_start, ':', '') AS INTEGER)""",
+        (turma, weekday)
+    ).fetchall()
+    conn.close()
+    return {"weekday": day["weekday"], "date": day["date"], "classes": [dict(r) for r in rows]}
 
 def login(driver: Chrome):
     print('logging in', flush=True)
@@ -28,7 +106,13 @@ def login(driver: Chrome):
         driver.implicitly_wait(2)
         driver.find_element(By.ID, "ContentPlaceHolderMain_txtLoginISEP").send_keys(creds["user"])
         driver.find_element(By.ID, "ContentPlaceHolderMain_txtPasswordISEP").send_keys(creds["pass"])
-        driver.find_element(By.ID, "ContentPlaceHolderMain_btLoginISEP").click()
+        login_button = driver.find_element(By.ID, "ContentPlaceHolderMain_btLoginISEP")
+        login_button.click()
+        # Wait for the post-login redirect to finish, otherwise it can override the first timetable page
+        wait = WebDriverWait(driver, 15)
+        wait.until(EC.staleness_of(login_button))
+        wait.until(EC.invisibility_of_element_located((By.ID, "ContentPlaceHolderMain_txtLoginISEP")))
+        wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
     except Exception as e:
         print("login", flush=True)
         print(e, flush=True)
@@ -84,12 +168,19 @@ def get_everything(sources):
     except Exception as e:
         print(e)
 
-output = get_everything(sources)
+def refresh():
+    output = get_everything(sources) or {}
+    # An empty schedule means the scrape failed (e.g. bad login), so keep the stored one
+    output = {turma: days for turma, days in output.items() if days}
+    if output:
+        save_output(output)
+
+init_db()
+refresh()
 
 def my_scheduled_task():
-    global output
     print("here", flush=True)
-    output = get_everything(sources)
+    refresh()
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(
@@ -108,11 +199,11 @@ if not production:
 
 @app.get("/")
 def index():
-    return render_template("index.html", turmas=list(output))
+    return render_template("index.html", turmas=get_turmas())
 
 @app.get("/<turma>")
 def horarios_templates(turma=None):
-    if turma not in list(output):
+    if turma not in get_turmas():
         return redirect("/")
     days = []
     now = datetime.datetime.now()
@@ -123,21 +214,17 @@ def horarios_templates(turma=None):
             "day": order_day[day],
             "now": weekday == order_day[day]
         })
-    return render_template("days.html", output=output, days=days, turma=turma)
+    return render_template("days.html", days=days, turma=turma)
 
 @app.get("/<turma>/<dia>")
 def horarios_dias_templates(turma=None, dia=None):
-    if turma not in list(output):
+    if turma not in get_turmas():
         return redirect("/")
     dia_int = int(dia)
     if dia_int < 0 or dia_int > 6:
         return redirect(f"/{turma}")
-    classes = {}
-    for day in output[turma]:
-        if order_day[day['weekday']] == int(dia):
-            day['classes'].sort(key=lambda x: int(x['hours_start'].replace(':', '')))
-            classes = day
-            break
+    weekday = next(name for name, idx in order_day.items() if idx == dia_int)
+    classes = get_day(turma, weekday)
     now = datetime.datetime.now()
     hour = now.hour
     minute = now.minute
@@ -149,12 +236,12 @@ def horarios_dias_templates(turma=None, dia=None):
             class_instance['now'] = True
         else:
             class_instance['now'] = False
-    return render_template("classes.html", output=output, classes=classes, turma=turma)
+    return render_template("classes.html", classes=classes, turma=turma)
 
 
 print("#-# Starting")
 try:
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=port)
 except Exception as e:
     print("#-# Error")
     print(e)

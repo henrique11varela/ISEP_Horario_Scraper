@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-5000}:${PORT:-5000}"
+    env_file: .env
+    environment:
+      TZ: Europe/Lisbon
+      DB_PATH: /app/data/horario.db
+      PORT: ${PORT:-5000}
+    volumes:
+      - .:/app/data
+    # Chromium crashes with Docker's default 64MB /dev/shm
+    shm_size: 2gb
+    restart: unless-stopped
