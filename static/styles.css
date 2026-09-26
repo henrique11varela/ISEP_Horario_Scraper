@@ -154,3 +154,26 @@
       text-transform: uppercase;
       opacity: 0.3;
     }
+    li.turma {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    li.turma a {
+      flex: 1;
+    }
+
+    .star {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--accent);
+      padding: 0.5rem;
+      line-height: 1;
+    }
+
+    .star:hover {
+      transform: scale(1.2);
+    }

@@ -1,6 +1,6 @@
 import os, time, datetime, sqlite3
 from dotenv import load_dotenv
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, request
 from selenium import webdriver
 from selenium.webdriver import Chrome, ChromeService
 from selenium.webdriver.common.by import By
@@ -197,9 +197,31 @@ if not production:
     from flask_cors import CORS
     CORS(app, support_credentials=True)
 
+DEFAULT_COOKIE = "default_turma"
+
 @app.get("/")
 def index():
-    return render_template("index.html", turmas=get_turmas())
+    turmas = get_turmas()
+    default = request.cookies.get(DEFAULT_COOKIE)
+    if default not in turmas:
+        default = None
+    # ?all shows the list even when a default is set
+    if default and "all" not in request.args:
+        return redirect(f"/{default}")
+    return render_template("index.html", turmas=turmas, default=default)
+
+@app.post("/default/clear")
+def clear_default():
+    response = redirect("/?all")
+    response.delete_cookie(DEFAULT_COOKIE)
+    return response
+
+@app.post("/default/<turma>")
+def set_default(turma=None):
+    response = redirect("/?all")
+    if turma in get_turmas():
+        response.set_cookie(DEFAULT_COOKIE, turma, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return response
 
 @app.get("/<turma>")
 def horarios_templates(turma=None):
