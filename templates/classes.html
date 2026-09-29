@@ -32,8 +32,8 @@
             <li class="{{ 'now' if class_item['now'] else '' }}">
                 <div class="pseudo-a">
                     <span class="link-title">{{ class_item["hours_start"] }}-{{ class_item["hours_end"] }} {{
-                        class_item["class_name"] }} </span>
-                    <span class="link-meta">@ {{ class_item["classroom"] }} - {{ class_item["prof_name"] }}</span>
+                        class_item["class_name"] }}</span>
+                    <span class="link-meta">{% if class_item["class_type"] %} ({{ class_item["class_type"] }}){% endif %} @ {{ class_item["classroom"] }} - {{ class_item["prof_name"] }}</span>
                     <span class="arrow"></span>
                 </div>
             </li>

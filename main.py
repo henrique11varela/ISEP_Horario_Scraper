@@ -55,9 +55,14 @@ def init_db():
                 class_name TEXT NOT NULL,
                 prof_name TEXT NOT NULL,
                 classroom TEXT NOT NULL,
+                class_type TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (turma, weekday) REFERENCES days (turma, weekday)
             );
         """)
+        # Migrate databases created before class_type existed
+        columns = [row["name"] for row in conn.execute("PRAGMA table_info(classes)")]
+        if "class_type" not in columns:
+            conn.execute("ALTER TABLE classes ADD COLUMN class_type TEXT NOT NULL DEFAULT ''")
     conn.close()
 
 def save_output(output):
@@ -73,8 +78,8 @@ def save_output(output):
                     (turma, day["weekday"], day["date"])
                 )
                 conn.executemany(
-                    "INSERT INTO classes (turma, weekday, hours_start, hours_end, class_name, prof_name, classroom) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    [(turma, day["weekday"], c["hours_start"], c["hours_end"], c["class_name"], c["prof_name"], c["classroom"]) for c in day["classes"]]
+                    "INSERT INTO classes (turma, weekday, hours_start, hours_end, class_name, prof_name, classroom, class_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    [(turma, day["weekday"], c["hours_start"], c["hours_end"], c["class_name"], c["prof_name"], c["classroom"], c["class_type"]) for c in day["classes"]]
                 )
     conn.close()
 
@@ -91,7 +96,7 @@ def get_day(turma, weekday):
         conn.close()
         return {"weekday": weekday, "date": "", "classes": []}
     rows = conn.execute(
-        """SELECT hours_start, hours_end, class_name, prof_name, classroom FROM classes
+        """SELECT hours_start, hours_end, class_name, prof_name, classroom, class_type FROM classes
            WHERE turma = ? AND weekday = ?
            ORDER BY CAST(REPLACE(hours_start, ':', '') AS INTEGER)""",
         (turma, weekday)
@@ -139,13 +144,16 @@ def scrape_url(driver: Chrome, url: str):
             prof_name, classroom = [b.text for b in class_element.find_elements(By.CSS_SELECTOR, ".wc-body b")]
             
             class_name = class_element.find_element(By.CSS_SELECTOR, "a[title='Disciplina']").text
+
+            class_type = class_element.find_element(By.CSS_SELECTOR, ".wc-title > table > tbody > tr > td:nth-child(2)").text.replace("&nbsp;&nbsp;", "").replace(" ", "")
             
             day["classes"].append({
                 "hours_start": hours_start,
                 "hours_end": hours_end,
                 "class_name": class_name[:5],
                 "prof_name": prof_name,
-                "classroom": classroom
+                "classroom": classroom,
+                "class_type": class_type
             })
         output.append(day)
     return output
